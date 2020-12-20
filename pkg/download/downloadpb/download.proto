@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package download;
+
+option go_package = "downloadpb";
+
+message FileDownloadInfo {
+    string name = 1;
+    string path = 2;
+    string extension = 3;
+}
+
+message FileDownloadBody {
+    bytes bytes = 4;
+}
+
+message FileDownloadResponse {
+    FileDownloadBody body = 1;
+}
+
+message FileDownloadRequest {
+    int32 fileID = 1;
+    string name = 2;
+    string extension = 3;
+    string path = 4;
+}
+
+service FileDownloadService {
+    rpc DownloadFile(FileDownloadRequest) returns (stream FileDownloadResponse) {};
+}
