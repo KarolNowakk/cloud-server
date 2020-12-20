@@ -1,7 +1,7 @@
 TODO: 
 -1. Transfer jwtManger to its own service
 0. Start testing while writing
-1. Implement grpc interceptors
+1. Implement grpc interceptors -> done
 2. Implement users specific folders
 3. Implement permissions for user to only his folder (for now)
 4. Implement .env file to store db connections and jwt key
