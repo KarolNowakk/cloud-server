@@ -33,8 +33,11 @@ type Repository interface {
 }
 
 //NewService returns new upload handler instance
-func NewService(r Repository, conf *Config) Service {
-	return &service{r: r, jwtManager: newJWTManager(conf)}
+func NewService(r Repository, key []byte, tokenDuration time.Duration) Service {
+	return &service{r: r, jwtManager: newJWTManager(&Config{
+		Key:      key,
+		Duration: tokenDuration,
+	})}
 }
 
 //Handler handles file upload

@@ -1,7 +1,13 @@
 TODO: 
--1. Transfer jwtManger to its own service
-0. Start testing while writing
-1. Implement grpc interceptors -> done
-2. Implement users specific folders
-3. Implement permissions for user to only his folder (for now)
-4. Implement .env file to store db connections and jwt key
+- Start testing while writing
+- Add file deleting gRPC server:
+    permission to delete a file should only have owner of pariticular file
+
+DONE:
+- Implement .env file to store db connections and jwt key
+- Figure out and implment uploading and downloading from user folder
+- Implement grpc interceptors
+- Implement permissions for user to only his folder (for now)
+
+REJECTED:
+- Transfer jwtManger to its own service :-> it is not neccessary for now
