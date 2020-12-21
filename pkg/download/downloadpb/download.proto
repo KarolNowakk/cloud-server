@@ -23,6 +23,8 @@ message FileDownloadRequest {
     string name = 2;
     string extension = 3;
     string path = 4;
+    bool fromPersonalFolder = 5;
+    string externalFolderId = 6;
 }
 
 service FileDownloadService {

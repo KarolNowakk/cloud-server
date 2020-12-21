@@ -7,5 +7,5 @@ var (
 	ErrInvalidPath = errors.New("invalid path provided")
 
 	//ErrPermissionDenied is returned if user has no permissions to data
-	ErrPermissionDenied = errors.New("you don't have acces to requested data")
+	ErrPermissionDenied = errors.New("permission denied")
 )

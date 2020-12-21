@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"cloud/pkg/permissions"
 	"cloud/pkg/upload"
 	"cloud/pkg/upload/uploadpb"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 type uploadServer struct {
 	us upload.Service
+	p  permissions.UploadPermissions
 }
 
 func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileServer) error {
@@ -28,13 +30,19 @@ func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileSe
 		stream.SendAndClose(&response)
 	}()
 
+	userID := stream.Context().Value("userID").(string)
+
 	//get file info
 	req, err := stream.Recv()
 	if err != nil {
 		return status.Errorf(codes.Internal, "error while receving file info")
 	}
 
-	if err := s.us.CreateFileIfNotExistsAndOpen(req.GetInfo()); err != nil {
+	if err := s.p.CanUploadToFolder(userID, req); err != nil {
+		return status.Errorf(codes.PermissionDenied, "you cannot upload data")
+	}
+
+	if err := s.us.CreateFileIfNotExistsAndOpen(req.GetInfo(), userID); err != nil {
 		return status.Errorf(codes.Internal, "error creating or opening a file")
 	}
 

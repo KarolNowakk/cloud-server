@@ -27,6 +27,7 @@ message LoginResponse {
     int64 expirationTime = 1;
     string type = 2;
     string token = 3;
+    string userID = 4;
 }
 
 

@@ -1,6 +1,7 @@
 package download
 
 import (
+	"cloud/pkg/download/downloadpb"
 	"os"
 )
 
@@ -8,7 +9,7 @@ import (
 type Service interface {
 	ReadBytes() ([]byte, error)
 	RecordDownloadFile() error
-	OpenFile(fileInfo *FileDownload) error
+	OpenFile(req *downloadpb.FileDownloadRequest, userID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
@@ -29,8 +30,22 @@ type service struct {
 }
 
 //CreateFileIfNotExistsAndOpen creates file and all directories
-func (s *service) OpenFile(fileInfo *FileDownload) error {
-	fullPath := fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
+func (s *service) OpenFile(req *downloadpb.FileDownloadRequest, userID string) error {
+	fileInfo := &FileDownload{
+		Name:               req.GetName(),
+		Extension:          req.GetExtension(),
+		Path:               req.GetPath(),
+		FromPersonalFolder: req.GetFromPersonalFolder(),
+		BelongsTo:          req.GetExternalFolderId(),
+	}
+
+	var fullPath string
+
+	if fileInfo.FromPersonalFolder {
+		fullPath = userID + "/" + fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
+	} else {
+		fullPath = fileInfo.BelongsTo + "/" + fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
+	}
 
 	readFile, err := os.OpenFile("files/"+fullPath, os.O_RDONLY, 0644)
 	if err != nil {

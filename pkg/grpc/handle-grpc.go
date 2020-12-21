@@ -6,6 +6,7 @@ import (
 	"cloud/pkg/download"
 	"cloud/pkg/download/downloadpb"
 	"cloud/pkg/interceptors"
+	"cloud/pkg/permissions"
 	"cloud/pkg/upload"
 	"cloud/pkg/upload/uploadpb"
 
@@ -13,7 +14,7 @@ import (
 )
 
 //NewServer return new grpc server instance
-func NewServer(us upload.Service, ds download.Service, as auth.Service) *grpc.Server {
+func NewServer(dp permissions.DownladPermissions, up permissions.UploadPermissions, us upload.Service, ds download.Service, as auth.Service) *grpc.Server {
 	methodsExcludedFromAuth := []string{
 		"/auth.AuthService/Login",
 		"/auth.AuthService/Register",
@@ -27,8 +28,8 @@ func NewServer(us upload.Service, ds download.Service, as auth.Service) *grpc.Se
 
 	s := grpc.NewServer(serverOptions...)
 
-	uploadpb.RegisterFileUploadServiceServer(s, &uploadServer{us: us})
-	downloadpb.RegisterFileDownloadServiceServer(s, &downloadServer{ds: ds})
+	uploadpb.RegisterFileUploadServiceServer(s, &uploadServer{us: us, p: up})
+	downloadpb.RegisterFileDownloadServiceServer(s, &downloadServer{ds: ds, p: dp})
 	authpb.RegisterAuthServiceServer(s, &authServer{as: as})
 
 	return s

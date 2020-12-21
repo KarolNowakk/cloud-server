@@ -1,15 +1,17 @@
 package permissions
 
-import "strings"
+import (
+	"cloud/pkg/download/downloadpb"
+)
 
 //DownladPermissions is interface returned by downloadpermissions
 type DownladPermissions interface {
 	//CanDownload checks if particular user can download requested file or folder
-	CanDownload(userID, path string) error
+	CanDownload(userID string, req *downloadpb.FileDownloadRequest) error
 }
 
-//Repository is interface thath provided repository has to implement
-type Repository interface{}
+// //Repository is interface thath provided repository has to implement
+// type Repository interface{}
 
 //NewDownloadPermissions returns sruct implementing DownladPermissions interface
 func NewDownloadPermissions() DownladPermissions {
@@ -18,15 +20,10 @@ func NewDownloadPermissions() DownladPermissions {
 
 type downloadPermissions struct{}
 
-func (p *downloadPermissions) CanDownload(userID, path string) error {
-	pathSlice := strings.Split(path, "/")
-	if len(path) < 1 {
-		return ErrInvalidPath
+func (p *downloadPermissions) CanDownload(userID string, req *downloadpb.FileDownloadRequest) error {
+	if req.FromPersonalFolder {
+		return nil
 	}
 
-	if pathSlice[0] != userID {
-		return ErrPermissionDenied
-	}
-
-	return nil
+	return ErrPermissionDenied
 }

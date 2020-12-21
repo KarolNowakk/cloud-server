@@ -8,7 +8,7 @@ import (
 
 //Service provides fiel uploading operations
 type Service interface {
-	CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo) error
+	CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error
 	WriteBytes(file *uploadpb.FileUploadBody) error
 	UpdateOrCreateFile() error
 }
@@ -31,20 +31,28 @@ type service struct {
 }
 
 //CreateFileIfNotExistsAndOpen creates file and all directories
-func (s *service) CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo) error {
+func (s *service) CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error {
 	s.fileData = &File{
-		Name:      file.GetName(),
-		FullPath:  file.GetPath() + "/" + file.GetName() + "." + file.GetExtension(),
-		Extension: file.GetExtension(),
+		Name:             file.GetName(),
+		FullPath:         file.GetPath() + "/" + file.GetName() + "." + file.GetExtension(),
+		Extension:        file.GetExtension(),
+		ToPersonalFolder: file.GetToPersonalFolder(),
+		BelongsTo:        file.GetExternalFolderID(),
 	}
 
-	if err := os.MkdirAll("files/"+file.GetPath(), os.ModePerm); err != nil {
+	var fullPath string
+
+	if file.ToPersonalFolder {
+		fullPath = userID + "/" + file.Path
+	} else {
+		fullPath = file.ExternalFolderID + "/" + file.Path
+	}
+
+	if err := os.MkdirAll("files/"+fullPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	filePath := s.fileData.FullPath
-
-	writeFile, err := os.OpenFile("files/"+filePath, os.O_CREATE|os.O_WRONLY, 0777)
+	writeFile, err := os.OpenFile("files/"+fullPath+"/"+file.Name+"."+file.Extension, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}

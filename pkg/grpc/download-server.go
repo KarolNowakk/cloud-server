@@ -3,6 +3,7 @@ package grpc
 import (
 	"cloud/pkg/download"
 	"cloud/pkg/download/downloadpb"
+	"cloud/pkg/permissions"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -11,15 +12,17 @@ import (
 
 type downloadServer struct {
 	ds download.Service
+	p  permissions.DownladPermissions
 }
 
 func (s *downloadServer) DownloadFile(req *downloadpb.FileDownloadRequest, stream downloadpb.FileDownloadService_DownloadFileServer) error {
-	fileData := &download.FileDownload{
-		Name:      req.GetName(),
-		Extension: req.GetExtension(),
-		Path:      req.GetPath(),
+	userID := stream.Context().Value("userID").(string)
+
+	if err := s.p.CanDownload(userID, req); err != nil {
+		return status.Errorf(codes.PermissionDenied, "you don't have acces to requested data")
 	}
-	if err := s.ds.OpenFile(fileData); err != nil {
+
+	if err := s.ds.OpenFile(req, userID); err != nil {
 		return status.Errorf(codes.NotFound, "file not foud")
 	}
 

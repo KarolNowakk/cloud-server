@@ -2,8 +2,10 @@ package upload
 
 //File represents file being downloaded
 type File struct {
-	ID        uint64
-	Name      string
-	Extension string
-	FullPath  string
+	ID               uint64
+	Name             string
+	Extension        string
+	FullPath         string
+	ToPersonalFolder bool
+	BelongsTo        string
 }

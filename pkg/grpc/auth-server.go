@@ -50,5 +50,6 @@ func (s *authServer) Login(ctx context.Context, req *authpb.LoginRequest) (*auth
 		Type:           "Bearer ",
 		ExpirationTime: token.ExpirationTime,
 		Token:          token.TokenString,
+		UserID:         token.UserID,
 	}, nil
 }

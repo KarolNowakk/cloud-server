@@ -8,6 +8,8 @@ message FileUploadInfo {
     string name = 1;
     string path = 2;
     string extension = 3;
+    bool toPersonalFolder = 4;
+    string externalFolderID = 5;
 }
 
 message FileUploadBody {
