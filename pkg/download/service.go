@@ -2,6 +2,7 @@ package download
 
 import (
 	"cloud/pkg/download/downloadpb"
+	"fmt"
 	"os"
 )
 
@@ -42,15 +43,18 @@ func (s *service) OpenFile(req *downloadpb.FileDownloadRequest, userID string) e
 	var fullPath string
 
 	if fileInfo.FromPersonalFolder {
-		fullPath = userID + "/" + fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
+		fullPath = userID + "/" + fileInfo.Path
 	} else {
 		fullPath = fileInfo.BelongsTo + "/" + fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
 	}
 
-	readFile, err := os.OpenFile("files/"+fullPath, os.O_RDONLY, 0644)
+	readFile, err := os.OpenFile("files/"+fullPath+"/"+fileInfo.Name+"."+fileInfo.Extension, os.O_RDONLY, 0644)
 	if err != nil {
 		return err
 	}
+
+	info, err := os.Stat("files/" + fullPath + "/" + fileInfo.Name + "." + fileInfo.Extension)
+	fmt.Println(info.Size())
 
 	s.fileData = fileInfo
 	s.file = readFile

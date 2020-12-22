@@ -5,7 +5,10 @@ import "cloud/pkg/upload/uploadpb"
 //UploadPermissions is interface returned by upload permissions
 type UploadPermissions interface {
 	//CanDownload checks if particular user can download requested file or folder
-	CanUploadToFolder(userID string, req *uploadpb.FileUploadRequest) error
+	CanUploadToFolder(userID string, in *uploadpb.FileUploadRequest) error
+
+	//CanDeleteFile checks if particular user can delete requested file or folder
+	CanDeleteFile(userID string, req *uploadpb.FileDeleteRequest) error
 }
 
 // //Repository is interface thath provided repository has to implement
@@ -24,4 +27,9 @@ func (p *uploadPermissions) CanUploadToFolder(userID string, req *uploadpb.FileU
 	}
 
 	return ErrPermissionDenied
+}
+
+func (p *uploadPermissions) CanDeleteFile(userID string, req *uploadpb.FileDeleteRequest) error {
+	//Its empty for now but maybe it will be needed in the future
+	return nil
 }

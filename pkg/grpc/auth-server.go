@@ -23,14 +23,14 @@ func (s *authServer) Register(ctx context.Context, req *authpb.RegisterRequest) 
 	err := s.as.Validate(req)
 
 	if err != nil {
-		log.Printf("Register error: %s", err.Error())
+		log.Printf("Register error1: %s", err.Error())
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	err = s.as.Register(req)
 
 	if err != nil {
-		log.Printf("Register error: %s", err.Error())
+		log.Printf("Register error2: %s", err.Error())
 		return nil, status.Errorf(codes.Internal, "error while registering")
 	}
 

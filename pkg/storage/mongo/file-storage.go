@@ -38,7 +38,7 @@ func (s *FileStorageService) UpdateOrCreate(fileInfo *upload.File) error {
 		if err != nil {
 			return err
 		}
-		if _, ok := res.InsertedID.(primitive.ObjectID); !ok || ok {
+		if _, ok := res.InsertedID.(primitive.ObjectID); !ok {
 			return ErrInvalidLastInsertedID
 		}
 		return nil

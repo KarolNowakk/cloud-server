@@ -115,6 +115,7 @@ func (s *service) IssueToken(user *User) (*Token, error) {
 
 	tokenString, err := s.jwtManager.generate(user, tokenID)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -126,6 +127,7 @@ func (s *service) IssueToken(user *User) (*Token, error) {
 	}
 
 	if err := s.r.CreateToken(&token); err != nil {
+		log.Println(err)
 		return nil, err
 	}
 

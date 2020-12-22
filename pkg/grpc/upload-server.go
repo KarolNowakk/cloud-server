@@ -4,6 +4,7 @@ import (
 	"cloud/pkg/permissions"
 	"cloud/pkg/upload"
 	"cloud/pkg/upload/uploadpb"
+	"context"
 	"io"
 	"log"
 
@@ -67,4 +68,23 @@ func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileSe
 	}
 
 	return nil
+}
+
+func (s *uploadServer) DeleteFile(ctx context.Context, in *uploadpb.FileDeleteRequest) (*uploadpb.FileDeleteResponse, error) {
+	userID := ctx.Value("userID").(string)
+
+	if err := s.p.CanDeleteFile(userID, in); err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "you cannot delete this file")
+	}
+
+	if err := s.us.DeleteFile(in, userID); err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	res := &uploadpb.FileDeleteResponse{
+		Ok:  true,
+		Msg: "file has been succesfully deleted",
+	}
+
+	return res, nil
 }

@@ -12,6 +12,8 @@ type fileModel struct {
 	Name       string             `bson:"name"`
 	Extension  string             `bson:"extension"`
 	FullPath   string             `bson:"fullPath"`
+	BelongsTo  primitive.ObjectID `bson:"belongsTo"`
+	Size       int64              `bson:"size"`
 	UploadedAt time.Time          `bson:"uploadedAt"`
 	ModifiedAt time.Time          `bson:"modifiedAt"`
 }

@@ -4,6 +4,7 @@ import (
 	"cloud/pkg/upload/uploadpb"
 	"log"
 	"os"
+	"strings"
 )
 
 //Service provides fiel uploading operations
@@ -11,6 +12,7 @@ type Service interface {
 	CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error
 	WriteBytes(file *uploadpb.FileUploadBody) error
 	UpdateOrCreateFile() error
+	DeleteFile(file *uploadpb.FileDeleteRequest, userID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
@@ -76,6 +78,17 @@ func (s *service) WriteBytes(file *uploadpb.FileUploadBody) error {
 func (s *service) UpdateOrCreateFile() error {
 	if err := s.r.UpdateOrCreate(s.fileData); err != nil {
 		log.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) DeleteFile(file *uploadpb.FileDeleteRequest, userID string) error {
+	fullPath := "files/" + userID + "/" + file.Path + "/" + file.Name + "." + file.Extension
+
+	//timsuffix is used because full path ends with "\n" and strings don't match
+	if err := os.Remove(strings.TrimSuffix(fullPath, "\n")); err != nil {
 		return err
 	}
 
