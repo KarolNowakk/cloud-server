@@ -11,13 +11,13 @@ import (
 type Service interface {
 	CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error
 	WriteBytes(file *uploadpb.FileUploadBody) error
-	UpdateOrCreateFile() error
+	UpdateOrCreateFile(userID string) error
 	DeleteFile(file *uploadpb.FileDeleteRequest, userID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
 type Repository interface {
-	UpdateOrCreate(fileInfo *File) error
+	UpdateOrCreate(fileInfo *File, userID string) error
 }
 
 //NewService returns new upload handler instance
@@ -39,7 +39,7 @@ func (s *service) CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, us
 		FullPath:         file.GetPath() + "/" + file.GetName() + "." + file.GetExtension(),
 		Extension:        file.GetExtension(),
 		ToPersonalFolder: file.GetToPersonalFolder(),
-		BelongsTo:        file.GetExternalFolderID(),
+		BelongsTo:        userID,
 	}
 
 	var fullPath string
@@ -75,8 +75,8 @@ func (s *service) WriteBytes(file *uploadpb.FileUploadBody) error {
 }
 
 //UpdateOrCreateFile creates or updates file
-func (s *service) UpdateOrCreateFile() error {
-	if err := s.r.UpdateOrCreate(s.fileData); err != nil {
+func (s *service) UpdateOrCreateFile(userID string) error {
+	if err := s.r.UpdateOrCreate(s.fileData, userID); err != nil {
 		log.Println(err)
 		return err
 	}

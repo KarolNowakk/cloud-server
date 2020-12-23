@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang/mock v1.4.4 // indirect
 	github.com/golang/protobuf v1.4.3 // direct
 	github.com/stretchr/testify v1.6.1
 	github.com/timshannon/badgerhold v1.0.0 // direct

@@ -1,13 +1,21 @@
 TODO: 
 - Start testing while writing
-- Add file deleting gRPC server:
-    permission to delete a file should only have owner of pariticular file
+- Add folders model
+- Add saving all new folder to database
+- Add recently downloaded at to file model
+- Add recently modified at to file model
+- Add endpoint that scans database for recently added/updated files
+    - it should recieve data/time and return all files paths that has been modified after that date/time
+- Add deleting unnecessery 0 bytes and end of files
 
 DONE:
 - Implement .env file to store db connections and jwt key
 - Figure out and implment uploading and downloading from user folder
 - Implement grpc interceptors
 - Implement permissions for user to only his folder (for now)
+- Add file deleting gRPC function:
+    - permission to delete a file should only have owner of pariticular file
+    - should poropably be in upload server because it's like uploading only 180 degrees different
 
 REJECTED:
 - Transfer jwtManger to its own service :-> it is not neccessary for now

@@ -48,7 +48,7 @@ func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileSe
 	}
 
 	//save file info to database
-	if err := s.us.UpdateOrCreateFile(); err != nil {
+	if err := s.us.UpdateOrCreateFile(userID); err != nil {
 		return status.Errorf(codes.Internal, "error while saving file info")
 	}
 
