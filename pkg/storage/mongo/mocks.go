@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -36,11 +37,44 @@ func dbMock() *mongo.Database {
 	return db
 }
 
-func clearCollection(coll *mongo.Collection) {
-	filter := bson.M{}
+func clearDatabase(db *mongo.Database) {
+	_, _ = db.Collection("users").DeleteMany(context.Background(), bson.M{})
+	_, _ = db.Collection("files").DeleteMany(context.Background(), bson.M{})
+	_, _ = db.Collection("folders").DeleteMany(context.Background(), bson.M{})
+	_, _ = db.Collection("tokens").DeleteMany(context.Background(), bson.M{})
+}
 
-	_, err := coll.DeleteMany(context.Background(), filter)
-	if err != nil {
-		log.Fatal(err)
+func getSampleInsertedUser(db *mongo.Database) *userModel {
+	user := &userModel{
+		Username: "test01110101",
+		Email:    "email@test.com",
+		Password: "2a$10$tSJtkEIc3S1fN4MKfUmEWOcpK2fbgzJ1O3t14OYZqm.sBPNwBVXKu", //PassWord12
 	}
+
+	res, _ := db.Collection("users").InsertOne(context.Background(), user)
+	oid, _ := res.InsertedID.(primitive.ObjectID)
+	user.ID = oid
+
+	return user
+}
+
+func getSampleInsertedFile(db *mongo.Database, owner primitive.ObjectID) *fileModel {
+	file := getSampleFile(db, owner)
+
+	res, _ := db.Collection("files").InsertOne(context.Background(), file)
+	oid, _ := res.InsertedID.(primitive.ObjectID)
+	file.ID = oid
+
+	return file
+}
+
+func getSampleFile(db *mongo.Database, owner primitive.ObjectID) *fileModel {
+	file := &fileModel{
+		Name:      "file",
+		Extension: ".pdf",
+		FullPath:  "testing/tester/testosteron/file.pdf",
+		BelongsTo: owner,
+	}
+
+	return file
 }

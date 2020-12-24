@@ -115,7 +115,7 @@ func (s *FileStorageService) doFolderAction(
 	var pathSlice []string
 
 	for _, name := range pathSliceNotFiltered {
-		if name == "." || strings.Contains(name, ".") {
+		if strings.Contains(name, ".") || len(name) < 1 {
 			continue
 		}
 
