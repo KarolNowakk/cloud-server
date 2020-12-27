@@ -5,6 +5,7 @@ import (
 	"cloud/pkg/download"
 	"cloud/pkg/grpc"
 	"cloud/pkg/permissions"
+	"cloud/pkg/scanner"
 	storage "cloud/pkg/storage/mongo"
 	"cloud/pkg/upload"
 	"context"
@@ -39,11 +40,14 @@ func main() {
 	fileStorageService := storage.NewFileStorageService(cloudDatabase)
 	downloadStorageService := storage.NewDownloadStorageService(cloudDatabase)
 	authStorageService := storage.NewAuthStorageService(cloudDatabase)
+	scannerStorageService := storage.NewScannerStorageService(cloudDatabase)
 
 	//init services
 	uploadService := upload.NewService(fileStorageService)
 	downloadService := download.NewService(downloadStorageService)
 	authService := auth.NewService(authStorageService, JWTkey, tokenDuration)
+	scannerService := scanner.NewService(scannerStorageService)
+
 	downloadPermissions := permissions.NewDownloadPermissions()
 	uploadPermissions := permissions.NewUploadPermissions()
 
@@ -52,7 +56,13 @@ func main() {
 		log.Fatalf("Failed to listen %v", err)
 	}
 
-	grpcServer := grpc.NewServer(downloadPermissions, uploadPermissions, uploadService, downloadService, authService)
+	grpcServer := grpc.NewServer(
+		downloadPermissions,
+		uploadPermissions,
+		uploadService,
+		downloadService,
+		authService,
+		scannerService)
 
 	log.Println("Listening...")
 	log.Fatal(grpcServer.Serve(lis))

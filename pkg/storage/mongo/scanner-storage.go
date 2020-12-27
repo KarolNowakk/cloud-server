@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"cloud-server/pkg/scanner"
+	"cloud/pkg/scanner"
 	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -22,8 +23,13 @@ type ScannerStorageService struct {
 }
 
 //GetUpdatedAfter returns files info of updated files after specified date
-func (s *ScannerStorageService) GetUpdatedAfter(date time.Time) ([]scanner.ScannedFile, error) {
-	filter := bson.M{"updatedAt": bson.M{"$lt": date}}
+func (s *ScannerStorageService) GetUpdatedAfter(date time.Time, userID string) ([]scanner.ScannedFile, error) {
+	owner, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{"updatedAt": bson.M{"$gte": date}, "owner": owner}
 
 	cursor, err := s.fileColl.Find(context.Background(), filter)
 	if err != nil {

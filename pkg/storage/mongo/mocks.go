@@ -13,7 +13,7 @@ import (
 )
 
 func dbMock() *mongo.Database {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://karol01:secret@127.0.0.1:27017"))
 
 	if err != nil {
 		log.Fatal("mongo connection not established: " + err.Error())
@@ -68,6 +68,8 @@ func getSampleFile(db *mongo.Database, owner primitive.ObjectID) *fileModel {
 		Extension: ".pdf",
 		FullPath:  "testing/tester/testosteron/file.pdf",
 		Owner:     owner,
+		UpdatedAt: time.Now(),
+		CreatedAt: time.Now(),
 	}
 
 	return file

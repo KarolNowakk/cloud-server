@@ -1,10 +1,10 @@
 TODO: 
 - Start testing while writing
-- Add endpoint that scans database for recently added/updated files
-    - it should recieve data/time and return all files paths that has been modified after that date/time
 - Add deleting unnecessery 0 bytes and end of files
 
 DONE:
+- Add endpoint that scans database for recently added/updated files
+    - it should recieve data/time and return all files paths that has been modified after that date/time
 - Add audit resuable to folder and file model
 - Add folders model
 - Add recently modified at to file model
