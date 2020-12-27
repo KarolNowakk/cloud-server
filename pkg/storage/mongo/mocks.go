@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"cloud/pkg/upload"
 	"context"
 	"log"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 func dbMock() *mongo.Database {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://karol01:secret@0.0.0.0:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
 
 	if err != nil {
 		log.Fatal("mongo connection not established: " + err.Error())
@@ -26,13 +27,6 @@ func dbMock() *mongo.Database {
 	}
 
 	db := client.Database("cloudTest")
-
-	list, err := db.ListCollectionNames(ctx, bson.M{})
-	if err != nil {
-		log.Fatalf("mongo connection not established: %v", err)
-	}
-
-	log.Println(list)
 
 	return db
 }
@@ -73,8 +67,19 @@ func getSampleFile(db *mongo.Database, owner primitive.ObjectID) *fileModel {
 		Name:      "file",
 		Extension: ".pdf",
 		FullPath:  "testing/tester/testosteron/file.pdf",
-		BelongsTo: owner,
+		Owner:     owner,
 	}
 
 	return file
+}
+
+func getSampleFileAsUploadFile(db *mongo.Database, owner primitive.ObjectID) *upload.File {
+	file := getSampleFile(db, owner)
+
+	return &upload.File{
+		Name:      file.Name,
+		Extension: file.Extension,
+		FullPath:  file.FullPath,
+		Owner:     file.Owner.Hex(),
+	}
 }

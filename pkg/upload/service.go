@@ -39,25 +39,30 @@ func (s *service) CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, us
 		FullPath:         file.GetPath() + "/" + file.GetName() + "." + file.GetExtension(),
 		Extension:        file.GetExtension(),
 		ToPersonalFolder: file.GetToPersonalFolder(),
-		BelongsTo:        userID,
+		Owner:            userID,
 	}
 
 	var fullPath string
 
 	if file.ToPersonalFolder {
-		fullPath = userID + "/" + file.Path
+		fullPath = "files/" + userID + "/" + file.Path
 	} else {
-		fullPath = file.ExternalFolderID + "/" + file.Path
+		fullPath = "files/" + file.ExternalFolderID + "/" + file.Path
 	}
 
-	if err := os.MkdirAll("files/"+fullPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	writeFile, err := os.OpenFile("files/"+fullPath+"/"+file.Name+"."+file.Extension, os.O_CREATE|os.O_WRONLY, 0777)
+	fullPath = fullPath + "/" + file.Name + "." + file.Extension
+
+	writeFile, err := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
+
+	info, err := os.Stat(fullPath)
+	s.fileData.Size = info.Size()
 
 	s.file = writeFile
 

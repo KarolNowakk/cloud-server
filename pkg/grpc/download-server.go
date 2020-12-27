@@ -44,7 +44,7 @@ func (s *downloadServer) DownloadFile(req *downloadpb.FileDownloadRequest, strea
 		stream.Send(res)
 	}
 
-	go s.ds.RecordDownloadFile()
+	// go s.ds.RecordDownloadFile(userID)
 
 	return nil
 }

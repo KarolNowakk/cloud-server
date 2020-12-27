@@ -7,5 +7,5 @@ type FileDownload struct {
 	Extension          string
 	Path               string
 	FromPersonalFolder bool
-	BelongsTo          string
+	Owner              string
 }

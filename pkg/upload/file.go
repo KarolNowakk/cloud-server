@@ -7,5 +7,6 @@ type File struct {
 	Extension        string
 	FullPath         string
 	ToPersonalFolder bool
-	BelongsTo        string
+	Owner            string
+	Size             int64
 }

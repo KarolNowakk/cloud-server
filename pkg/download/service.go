@@ -2,20 +2,19 @@ package download
 
 import (
 	"cloud/pkg/download/downloadpb"
-	"fmt"
 	"os"
 )
 
 //Service provides fiel uploading operations
 type Service interface {
 	ReadBytes() ([]byte, error)
-	RecordDownloadFile() error
+	// RecordDownloadFile(userID string)
 	OpenFile(req *downloadpb.FileDownloadRequest, userID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
 type Repository interface {
-	CanDownload() error
+	// GetFileInfo(fileInfo *FileDownload) (*FileDownload, error)
 }
 
 //NewService returns new upload handler instance
@@ -37,24 +36,28 @@ func (s *service) OpenFile(req *downloadpb.FileDownloadRequest, userID string) e
 		Extension:          req.GetExtension(),
 		Path:               req.GetPath(),
 		FromPersonalFolder: req.GetFromPersonalFolder(),
-		BelongsTo:          req.GetExternalFolderId(),
 	}
 
 	var fullPath string
 
+	if req.GetFromPersonalFolder() {
+		fileInfo.Owner = userID
+	} else {
+		fileInfo.Owner = req.GetExternalFolderId()
+	}
+
 	if fileInfo.FromPersonalFolder {
 		fullPath = userID + "/" + fileInfo.Path
 	} else {
-		fullPath = fileInfo.BelongsTo + "/" + fileInfo.Path + "/" + fileInfo.Name + "." + fileInfo.Extension
+		fullPath = fileInfo.Owner + "/" + fileInfo.Path
 	}
 
-	readFile, err := os.OpenFile("files/"+fullPath+"/"+fileInfo.Name+"."+fileInfo.Extension, os.O_RDONLY, 0644)
+	fullPath = "files/" + fullPath + "/" + fileInfo.Name + "." + fileInfo.Extension
+
+	readFile, err := os.OpenFile(fullPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return err
 	}
-
-	info, err := os.Stat("files/" + fullPath + "/" + fileInfo.Name + "." + fileInfo.Extension)
-	fmt.Println(info.Size())
 
 	s.fileData = fileInfo
 	s.file = readFile
@@ -74,7 +77,7 @@ func (s *service) ReadBytes() ([]byte, error) {
 	return bytes, nil
 }
 
-//RecordDownloadFile records file download
-func (s *service) RecordDownloadFile() error {
-	return nil
-}
+// //RecordDownloadFile records file download
+// func (s *service) RecordDownloadFile(userID string) {
+// 	_ = s.r.UpdateAsDownloaded(s.fileData, userID)
+// }
