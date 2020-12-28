@@ -1,8 +1,10 @@
-TODO: 
-- Start testing while writing
-- Add deleting unnecessery 0 bytes and end of files
+TODO:
+- Add parent (folder) to file model 
+- Add permissions to other users files
 
 DONE:
+- Add deleting unnecessery 0 bytes and end of files
+- Start testing while writing
 - Add endpoint that scans database for recently added/updated files
     - it should recieve data/time and return all files paths that has been modified after that date/time
 - Add audit resuable to folder and file model
