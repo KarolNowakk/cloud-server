@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"cloud/pkg/auth/authpb"
+	"context"
 	"errors"
 	"log"
 	"regexp"
@@ -16,20 +16,20 @@ var (
 
 //Service provides fiel uploading operations
 type Service interface {
-	Register(*authpb.RegisterRequest) error
-	Validate(*authpb.RegisterRequest) error
-	Login(req *authpb.LoginRequest) (*Token, error)
-	Verify(tokenString string) (string, error)
+	Register(ctx context.Context, email, password string) error
+	Validate(ctx context.Context, email, password, passwordConfirmation string) error
+	Login(ctx context.Context, email, password string) (Token, error)
+	Verify(ctx context.Context, tokenString string) (string, error)
 }
 
 //Repository is interface that plugged in repo service must satisfy
 type Repository interface {
-	CreateUser(*User) error
-	ValueExists(field, value string) bool
-	FindUser(field, value string) (*User, error)
-	CreateToken(token *Token) error
-	FindUserByHex(id string) (*User, error)
-	FindUsersTokens(id string) ([]Token, error)
+	CreateUser(ctx context.Context, user User) error
+	ValueExists(ctx context.Context, field, value string) bool
+	FindUser(ctx context.Context, field, value string) (User, error)
+	CreateToken(ctx context.Context, token Token) error
+	FindUserByHex(ctx context.Context, id string) (User, error)
+	FindUsersTokens(ctx context.Context, id string) ([]Token, error)
 }
 
 //NewService returns new upload handler instance
@@ -46,33 +46,28 @@ type service struct {
 	jwtManager *jwtManager
 }
 
-func (s *service) Register(req *authpb.RegisterRequest) error {
+func (s *service) Register(ctx context.Context, email, password string) error {
 	newAuthUser := User{}
-	newAuthUser.Username = req.Username
-	newAuthUser.Email = req.Email
-	newAuthUser.Password = req.Password
-	newAuthUser.PasswordConfirmation = req.PasswordConfirmation
+	newAuthUser.Email = email
+	newAuthUser.Password = password
 
-	if err := s.r.CreateUser(&newAuthUser); err != nil {
+	if err := s.r.CreateUser(ctx, newAuthUser); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *service) Validate(req *authpb.RegisterRequest) error {
+func (s *service) Validate(ctx context.Context, email, password, passwordConfirmation string) error {
 	err := ErrValidation{msg: ""}
 
-	if len(req.Username) < 8 || len(req.Username) > 30 {
-		err.push("username must be between 8 and 30 characters")
-	}
-	if !emailRegex.MatchString(req.Email) {
+	if !emailRegex.MatchString(email) {
 		err.push("provided email is not valid")
 	}
-	if len(req.Password) < 10 {
+	if len(password) < 10 {
 		err.push("password must contain at least 2 uppercase letters, 1 special character, two digits, three lowercase letters and must have length of 10")
 	}
-	if req.Password != req.PasswordConfirmation {
+	if password != passwordConfirmation {
 		err.push("passwords don't match")
 	}
 
@@ -81,11 +76,8 @@ func (s *service) Validate(req *authpb.RegisterRequest) error {
 		return err
 	}
 
-	if s.r.ValueExists("email", req.Email) {
+	if s.r.ValueExists(ctx, "email", email) {
 		err.push("email allready exists")
-	}
-	if s.r.ValueExists("username", req.Username) {
-		err.push("username allready exists")
 	}
 
 	if len(err.Error()) > 1 {
@@ -95,28 +87,28 @@ func (s *service) Validate(req *authpb.RegisterRequest) error {
 	return nil
 }
 
-func (s *service) Login(req *authpb.LoginRequest) (*Token, error) {
-	user, err := s.r.FindUser("username", req.Username)
+func (s *service) Login(ctx context.Context, email, password string) (Token, error) {
+	user, err := s.r.FindUser(ctx, "email", email)
 	if err != nil {
 		log.Println(err)
-		return nil, ErrBadCredentials
+		return Token{}, ErrBadCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		log.Println(err)
-		return nil, ErrBadCredentials
+		return Token{}, ErrBadCredentials
 	}
 
-	return s.IssueToken(user)
+	return s.IssueToken(ctx, user)
 }
 
-func (s *service) IssueToken(user *User) (*Token, error) {
+func (s *service) IssueToken(ctx context.Context, user User) (Token, error) {
 	tokenID := randomString(16)
 
-	tokenString, err := s.jwtManager.generate(user, tokenID)
+	tokenString, err := s.jwtManager.generate(&user, tokenID)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Token{}, err
 	}
 
 	token := Token{
@@ -126,26 +118,26 @@ func (s *service) IssueToken(user *User) (*Token, error) {
 		ExpirationTime: time.Now().Add(s.jwtManager.config.Duration).Unix(),
 	}
 
-	if err := s.r.CreateToken(&token); err != nil {
+	if err := s.r.CreateToken(ctx, token); err != nil {
 		log.Println(err)
-		return nil, err
+		return Token{}, err
 	}
 
-	return &token, nil
+	return token, nil
 }
 
-func (s *service) Verify(tokenString string) (string, error) {
+func (s *service) Verify(ctx context.Context, tokenString string) (string, error) {
 	id, err := s.jwtManager.verify(tokenString)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = s.r.FindUserByHex(id)
+	_, err = s.r.FindUserByHex(ctx, id)
 	if err != nil {
 		return "", err
 	}
 
-	tokens, err := s.r.FindUsersTokens(id)
+	tokens, err := s.r.FindUsersTokens(ctx, id)
 	if err != nil {
 		return "", err
 	}

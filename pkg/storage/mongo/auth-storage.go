@@ -27,9 +27,8 @@ type AuthStorageService struct {
 }
 
 //CreateUser creates new user and saves it into database
-func (s *AuthStorageService) CreateUser(user *auth.User) error {
+func (s *AuthStorageService) CreateUser(ctx context.Context, user auth.User) error {
 	newUserModel := userModel{}
-	newUserModel.Username = user.Username
 	newUserModel.Email = user.Email
 	newUserModel.JoinedAt = time.Now()
 
@@ -40,7 +39,7 @@ func (s *AuthStorageService) CreateUser(user *auth.User) error {
 
 	newUserModel.Password = string(encryptedPassword)
 
-	res, err := s.userColl.InsertOne(context.Background(), newUserModel)
+	res, err := s.userColl.InsertOne(ctx, newUserModel)
 	if err != nil {
 		return err
 	}
@@ -52,11 +51,11 @@ func (s *AuthStorageService) CreateUser(user *auth.User) error {
 }
 
 //ValueExists tells if value exists on db
-func (s *AuthStorageService) ValueExists(field, value string) bool {
+func (s *AuthStorageService) ValueExists(ctx context.Context, field, value string) bool {
 	var user userModel
 	filter := bson.M{field: value}
 
-	if err := s.userColl.FindOne(context.Background(), filter).Decode(&user); err != nil {
+	if err := s.userColl.FindOne(ctx, filter).Decode(&user); err != nil {
 		return false
 	}
 
@@ -64,25 +63,24 @@ func (s *AuthStorageService) ValueExists(field, value string) bool {
 }
 
 //FindUser tels if value exists on db
-func (s *AuthStorageService) FindUser(field, value string) (*auth.User, error) {
+func (s *AuthStorageService) FindUser(ctx context.Context, field, value string) (auth.User, error) {
 	var user userModel
 	filter := bson.M{field: value}
 
-	if err := s.userColl.FindOne(context.Background(), filter).Decode(&user); err != nil {
-		return nil, err
+	if err := s.userColl.FindOne(ctx, filter).Decode(&user); err != nil {
+		return auth.User{}, err
 	}
 
 	authUser := auth.User{}
 	authUser.ID = user.ID.Hex()
 	authUser.Email = user.Email
-	authUser.Username = user.Username
 	authUser.Password = user.Password
 
-	return &authUser, nil
+	return authUser, nil
 }
 
 //CreateToken creates new token and saves it into database
-func (s *AuthStorageService) CreateToken(token *auth.Token) error {
+func (s *AuthStorageService) CreateToken(ctx context.Context, token auth.Token) error {
 	userID, err := primitive.ObjectIDFromHex(token.UserID)
 	if err != nil {
 		return err
@@ -93,7 +91,7 @@ func (s *AuthStorageService) CreateToken(token *auth.Token) error {
 	newTokenModel.UserID = userID
 	newTokenModel.Token = token.TokenString
 
-	res, err := s.tokenColl.InsertOne(context.Background(), newTokenModel)
+	res, err := s.tokenColl.InsertOne(ctx, newTokenModel)
 	if err != nil {
 		return err
 	}
@@ -105,32 +103,29 @@ func (s *AuthStorageService) CreateToken(token *auth.Token) error {
 }
 
 //FindUserByHex finds user by hex value
-func (s *AuthStorageService) FindUserByHex(id string) (*auth.User, error) {
+func (s *AuthStorageService) FindUserByHex(ctx context.Context, id string) (auth.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return auth.User{}, err
 	}
 
 	var user userModel
 	filter := bson.M{"_id": objectID}
 
-	if err := s.userColl.FindOne(context.Background(), filter).Decode(&user); err != nil {
-		return nil, err
+	if err := s.userColl.FindOne(ctx, filter).Decode(&user); err != nil {
+		return auth.User{}, err
 	}
 
 	authUser := auth.User{}
 	authUser.ID = user.ID.Hex()
 	authUser.Email = user.Email
-	authUser.Username = user.Username
 	authUser.Password = user.Password
 
-	return &authUser, nil
+	return authUser, nil
 }
 
 //FindUsersTokens finds all users tokens
-func (s *AuthStorageService) FindUsersTokens(userID string) ([]auth.Token, error) {
-	ctx := context.Background()
-
+func (s *AuthStorageService) FindUsersTokens(ctx context.Context, userID string) ([]auth.Token, error) {
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, err

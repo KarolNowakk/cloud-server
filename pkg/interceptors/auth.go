@@ -2,6 +2,7 @@ package interceptors
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -17,7 +18,7 @@ type AuthInterceptor interface {
 
 //AuthService is interface that must be satistified to be used as a auth service
 type AuthService interface {
-	Verify(token string) (string, error)
+	Verify(ctx context.Context, tokenString string) (string, error)
 }
 
 //NewAuthInterceptor creates new auth interceptor
@@ -53,12 +54,13 @@ func newwrapedStream(ss grpc.ServerStream) *wrapedStream {
 }
 
 func (s wrapedStream) Context() context.Context {
-	return context.WithValue(s.ServerStream.Context(), "userID", s.userID)
+	return context.WithValue(s.ServerStream.Context(), "userID", s.userID) // TODO: add some struct as key
 }
 
 func (i authInterceptor) Stream() grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		id, err := i.authorize(ss.Context(), info.FullMethod)
+		fmt.Println(id, err)
 		if err != nil {
 			return err
 		}
@@ -89,7 +91,7 @@ func (i authInterceptor) authorize(ctx context.Context, currentMethod string) (s
 	}
 
 	accessToken := values[0]
-	id, err := i.service.Verify(accessToken)
+	id, err := i.service.Verify(ctx, accessToken)
 	if err != nil {
 		return "", status.Errorf(codes.Unauthenticated, "unauthorized")
 	}
