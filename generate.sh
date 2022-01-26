@@ -1,7 +1,11 @@
-protoc pkg/upload/uploadpb/upload.proto --go_out=plugins=grpc:.
+#upload
+protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative  pkg/upload/uploadpb/upload.proto
 
-protoc pkg/download/downloadpb/download.proto --go_out=plugins=grpc:.
+#search
+protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative  pkg/search/searchpb/search.proto
 
-protoc pkg/auth/authpb/auth.proto --go_out=plugins=grpc:.
+#download
+protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative  pkg/download/downloadpb/download.proto
 
-protoc pkg/scanner/scannerpb/scanner.proto --go_out=plugins=grpc:.
+#auth
+protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative  pkg/auth/authpb/auth.proto
