@@ -1,29 +1,29 @@
 version: '3'
-services: 
+services:
   mongo_db:
     image: 'mongo'
     container_name: 'cloud-mongo'
-    environment: 
+    environment:
       - MONGO_INITDB_DATABASE=cloud
-      - MONGO_INITDB_ROOT_USERNAME=karol01 
+      - MONGO_INITDB_ROOT_USERNAME=karol01
       - MONGO_INITDB_ROOT_PASSWORD=secret
-    volumes: 
+    volumes:
     # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     - ./mongo-volume:/mongo/db
     ports:
     - 27017:27017
-    networks: 
+    networks:
       - 'cloud-net'
   goapp:
-    image: 'docker-go'
+    build: .
     container_name: 'cloud-go'
-    volumes: 
+    volumes:
     - .:/app
-    ports: 
+    ports:
     - 50051:50051
-    networks: 
+    networks:
     - 'cloud-net'
 
 networks:
   cloud-net:
-    driver: bridge    
+    driver: bridge
