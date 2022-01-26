@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package download;
 
-option go_package = "downloadpb";
+option go_package = "/downloadpb";
 
 message FileDownloadInfo {
     string name = 1;
-    string path = 2;
-    string extension = 3;
 }
 
 message FileDownloadBody {
@@ -15,18 +13,28 @@ message FileDownloadBody {
 }
 
 message FileDownloadResponse {
-    FileDownloadBody body = 1;
+    oneof data {
+        FileDownloadInfo info = 1;
+        FileDownloadBody body = 2;
+    }
 }
 
 message FileDownloadRequest {
-    int32 fileID = 1;
-    string name = 2;
-    string extension = 3;
-    string path = 4;
-    bool fromPersonalFolder = 5;
-    string externalFolderId = 6;
+    string id = 1;
+}
+
+// ----------------------------------------------------------------
+
+message FileDeleteRequest {
+    string id = 1;
+}
+
+message FileDeleteResponse {
+    bool ok = 1;
+    string msg = 2;
 }
 
 service FileDownloadService {
     rpc DownloadFile(FileDownloadRequest) returns (stream FileDownloadResponse) {};
+    rpc DeleteFile(FileDeleteRequest) returns (FileDeleteResponse) {};
 }

@@ -1,20 +1,22 @@
 package download
 
 import (
-	"cloud/pkg/download/downloadpb"
+	"context"
 	"os"
 )
 
 //Service provides fiel uploading operations
 type Service interface {
-	ReadBytes() ([]byte, error)
-	// RecordDownloadFile(userID string)
-	OpenFile(req *downloadpb.FileDownloadRequest, userID string) error
+	ReadChunk(file *os.File, chunkSize int, off int64, whence int) ([]byte, error)
+	OpenFile(path string) (*os.File, error)
+	FindFile(ctx context.Context, fileID string) (FileDownload, error)
+	DeleteFile(ctx context.Context, fileID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
 type Repository interface {
-	// GetFileInfo(fileInfo *FileDownload) (*FileDownload, error)
+	FindFile(ctx context.Context, fileID string) (FileDownload, error)
+	DeleteFile(ctx context.Context, fileID string) error
 }
 
 //NewService returns new upload handler instance
@@ -24,52 +26,22 @@ func NewService(r Repository) Service {
 
 //Handler handles file upload
 type service struct {
-	r        Repository
-	file     *os.File
-	fileData *FileDownload
+	r Repository
 }
 
-//CreateFileIfNotExistsAndOpen creates file and all directories
-func (s *service) OpenFile(req *downloadpb.FileDownloadRequest, userID string) error {
-	fileInfo := &FileDownload{
-		Name:               req.GetName(),
-		Extension:          req.GetExtension(),
-		Path:               req.GetPath(),
-		FromPersonalFolder: req.GetFromPersonalFolder(),
-	}
-
-	var fullPath string
-
-	if req.GetFromPersonalFolder() {
-		fileInfo.Owner = userID
-	} else {
-		fileInfo.Owner = req.GetExternalFolderId()
-	}
-
-	if fileInfo.FromPersonalFolder {
-		fullPath = userID + "/" + fileInfo.Path
-	} else {
-		fullPath = fileInfo.Owner + "/" + fileInfo.Path
-	}
-
-	fullPath = "files/" + fullPath + "/" + fileInfo.Name + "." + fileInfo.Extension
-
-	readFile, err := os.OpenFile(fullPath, os.O_RDONLY, 0644)
-	if err != nil {
-		return err
-	}
-
-	s.fileData = fileInfo
-	s.file = readFile
-
-	return nil
+func (s service) FindFile(ctx context.Context, fileID string) (FileDownload, error) {
+	return s.r.FindFile(ctx, fileID)
 }
 
-//ReadBytes read bytes from a file
-func (s *service) ReadBytes() ([]byte, error) {
-	bytes := make([]byte, 4*1024)
+func (s service) OpenFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_RDONLY, 0644)
+}
 
-	_, err := s.file.Read(bytes)
+func (service) ReadChunk(file *os.File, chunkSize int, off int64, whence int) ([]byte, error) {
+	bytes := make([]byte, chunkSize)
+
+	file.Seek(off, whence)
+	_, err := file.Read(bytes)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +49,6 @@ func (s *service) ReadBytes() ([]byte, error) {
 	return bytes, nil
 }
 
-// //RecordDownloadFile records file download
-// func (s *service) RecordDownloadFile(userID string) {
-// 	_ = s.r.UpdateAsDownloaded(s.fileData, userID)
-// }
+func (s service) DeleteFile(ctx context.Context, fileID string) error {
+	return s.r.DeleteFile(ctx, fileID)
+}

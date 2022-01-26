@@ -2,10 +2,11 @@ package main
 
 import (
 	"cloud/pkg/auth"
+	"cloud/pkg/config"
 	"cloud/pkg/download"
 	"cloud/pkg/grpc"
 	"cloud/pkg/permissions"
-	"cloud/pkg/scanner"
+	"cloud/pkg/search"
 	storage "cloud/pkg/storage/mongo"
 	"cloud/pkg/upload"
 	"context"
@@ -32,6 +33,10 @@ func main() {
 	//load env config variables
 	JWTkey, tokenDuration, dbUsername, dbPassword, dbHost, dbPort := getConfig()
 
+	if err := createUploadFolder(); err != nil {
+		log.Fatalf("Cannot create upload folder: %s", err)
+	}
+
 	//open mongo db
 	cloudDatabase := getMongoConnection(dbUsername, dbPassword, dbHost, dbPort)
 	defer cloudDatabase.Client().Disconnect(context.TODO())
@@ -40,16 +45,15 @@ func main() {
 	fileStorageService := storage.NewFileStorageService(cloudDatabase)
 	downloadStorageService := storage.NewDownloadStorageService(cloudDatabase)
 	authStorageService := storage.NewAuthStorageService(cloudDatabase)
-	scannerStorageService := storage.NewScannerStorageService(cloudDatabase)
+	searchStorageService := storage.NewSearchStorageService(cloudDatabase)
 
 	//init services
 	uploadService := upload.NewService(fileStorageService)
 	downloadService := download.NewService(downloadStorageService)
 	authService := auth.NewService(authStorageService, JWTkey, tokenDuration)
-	scannerService := scanner.NewService(scannerStorageService)
+	searchService := search.NewService(searchStorageService)
 
-	downloadPermissions := permissions.NewDownloadPermissions()
-	uploadPermissions := permissions.NewUploadPermissions()
+	permissions := permissions.NewPermissions()
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -57,12 +61,11 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(
-		downloadPermissions,
-		uploadPermissions,
+		permissions,
 		uploadService,
 		downloadService,
 		authService,
-		scannerService)
+		searchService)
 
 	log.Println("Listening...")
 	log.Fatal(grpcServer.Serve(lis))
@@ -108,4 +111,12 @@ func getMongoConnection(dbUsername, dbPassword, dbHost, dbPort string) *mongo.Da
 	log.Println(list)
 
 	return db
+}
+
+func createUploadFolder() error {
+	if err := os.MkdirAll(config.UploadFolder, os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
 }
