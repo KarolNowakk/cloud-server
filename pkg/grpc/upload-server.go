@@ -1,23 +1,24 @@
 package grpc
 
 import (
-	"cloud/pkg/permissions"
 	"cloud/pkg/upload"
 	"cloud/pkg/upload/uploadpb"
-	"context"
+	"fmt"
 	"io"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type uploadServer struct {
+	uploadpb.UnsafeFileUploadServiceServer
+
 	us upload.Service
-	p  permissions.UploadPermissions
 }
 
-func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileServer) error {
+func (s uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileServer) error {
 	//send response
 	defer func() {
 		response := uploadpb.FileUploadResponse{Ok: true, Msg: "file has been uploaded"}
@@ -36,20 +37,20 @@ func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileSe
 	//get file info
 	req, err := stream.Recv()
 	if err != nil {
+		log.Printf("Error receving: %v", err)
 		return status.Errorf(codes.Internal, "error while receving file info")
 	}
 
-	if err := s.p.CanUploadToFolder(userID, req); err != nil {
-		return status.Errorf(codes.PermissionDenied, "you cannot upload data")
-	}
-
-	if err := s.us.CreateFileIfNotExistsAndOpen(req.GetInfo(), userID); err != nil {
+	if err := s.us.CreateFileIfNotExistsAndOpen(stream.Context(), req.GetInfo(), userID); err != nil {
+		log.Printf("Error createing db model: %v", err)
 		return status.Errorf(codes.Internal, "error creating or opening a file")
 	}
 
+	fmt.Println(req.GetInfo())
+
 	//save file info to database
-	if err := s.us.UpdateOrCreateFile(userID); err != nil {
-		return status.Errorf(codes.Internal, "error while saving file info")
+	if err := s.us.UpdateOrCreateFile(stream.Context(), userID); err != nil {
+		return status.Errorf(codes.Internal, "error while saving file info: %v", err)
 	}
 
 	for {
@@ -58,33 +59,18 @@ func (s *uploadServer) UploadFile(stream uploadpb.FileUploadService_UploadFileSe
 			break
 		}
 		if err != nil {
+			log.Printf("Error receving: %v", err)
 			return status.Errorf(codes.Internal, "error while receving file bytes")
 		}
 
 		//write bytes to file on the server
 		if err := s.us.WriteBytes(req.GetBody()); err != nil {
-			return status.Errorf(codes.Internal, "error writing to file")
+			log.Printf("Error writing to file: %v", err)
+			return status.Errorf(codes.Internal, "error writing to file: %v", err)
 		}
 	}
 
+	log.Println("File Uploaded.")
+
 	return nil
-}
-
-func (s *uploadServer) DeleteFile(ctx context.Context, in *uploadpb.FileDeleteRequest) (*uploadpb.FileDeleteResponse, error) {
-	userID := ctx.Value("userID").(string)
-
-	if err := s.p.CanDeleteFile(userID, in); err != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "you cannot delete this file")
-	}
-
-	if err := s.us.DeleteFile(in, userID); err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
-	res := &uploadpb.FileDeleteResponse{
-		Ok:  true,
-		Msg: "file has been succesfully deleted",
-	}
-
-	return res, nil
 }

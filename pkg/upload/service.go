@@ -1,23 +1,23 @@
 package upload
 
 import (
+	"cloud/pkg/config"
 	"cloud/pkg/upload/uploadpb"
+	"context"
 	"log"
 	"os"
-	"strings"
 )
 
 //Service provides fiel uploading operations
 type Service interface {
-	CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error
+	CreateFileIfNotExistsAndOpen(ctx context.Context, file *uploadpb.FileUploadInfo, userID string) error
 	WriteBytes(file *uploadpb.FileUploadBody) error
-	UpdateOrCreateFile(userID string) error
-	DeleteFile(file *uploadpb.FileDeleteRequest, userID string) error
+	UpdateOrCreateFile(ctx context.Context, userID string) error
 }
 
 //Repository is interface that plugged in repo service must satisfy
 type Repository interface {
-	UpdateOrCreate(fileInfo *File, userID string) error
+	UpdateOrCreate(ctx context.Context, fileInfo *File, userID string) error
 }
 
 //NewService returns new upload handler instance
@@ -33,36 +33,21 @@ type service struct {
 }
 
 //CreateFileIfNotExistsAndOpen creates file and all directories
-func (s *service) CreateFileIfNotExistsAndOpen(file *uploadpb.FileUploadInfo, userID string) error {
+func (s *service) CreateFileIfNotExistsAndOpen(ctx context.Context, file *uploadpb.FileUploadInfo, userID string) error {
 	s.fileData = &File{
-		Name:             file.GetName(),
-		FullPath:         file.GetPath() + "/" + file.GetName() + "." + file.GetExtension(),
-		Extension:        file.GetExtension(),
-		ToPersonalFolder: file.GetToPersonalFolder(),
-		Owner:            userID,
+		Name:       file.GetName(),
+		Owner:      userID,
+		SearchTags: file.GetSearchTags(),
 	}
 
-	var fullPath string
+	fullPath := config.UploadFolder + "/" + s.fileData.Owner + "-" + file.Name
 
-	if file.ToPersonalFolder {
-		fullPath = "files/" + userID + "/" + file.Path
-	} else {
-		fullPath = "files/" + file.ExternalFolderID + "/" + file.Path
-	}
-
-	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
-		return err
-	}
-
-	fullPath = fullPath + "/" + file.Name + "." + file.Extension
+	s.fileData.Path = fullPath
 
 	writeFile, err := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
-
-	info, err := os.Stat(fullPath)
-	s.fileData.Size = info.Size()
 
 	s.file = writeFile
 
@@ -80,20 +65,9 @@ func (s *service) WriteBytes(file *uploadpb.FileUploadBody) error {
 }
 
 //UpdateOrCreateFile creates or updates file
-func (s *service) UpdateOrCreateFile(userID string) error {
-	if err := s.r.UpdateOrCreate(s.fileData, userID); err != nil {
+func (s *service) UpdateOrCreateFile(ctx context.Context, userID string) error {
+	if err := s.r.UpdateOrCreate(ctx, s.fileData, userID); err != nil {
 		log.Println(err)
-		return err
-	}
-
-	return nil
-}
-
-func (s *service) DeleteFile(file *uploadpb.FileDeleteRequest, userID string) error {
-	fullPath := "files/" + userID + "/" + file.Path + "/" + file.Name + "." + file.Extension
-
-	//timsuffix is used because full path ends with "\n" and strings don't match
-	if err := os.Remove(strings.TrimSuffix(fullPath, "\n")); err != nil {
 		return err
 	}
 

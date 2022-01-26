@@ -2,18 +2,15 @@ syntax = "proto3";
 
 package upload;
 
-option go_package = "uploadpb";
+option go_package = "./uploadpb";
 
 message FileUploadInfo {
     string name = 1;
-    string path = 2;
-    string extension = 3;
-    bool toPersonalFolder = 4;
-    string externalFolderID = 5;
+    string searchTags = 3;
 }
 
 message FileUploadBody {
-    bytes bytes = 4;    
+    bytes bytes = 4;
 }
 
 message FileUploadRequest {
@@ -28,20 +25,6 @@ message FileUploadResponse {
     string msg = 2;
 }
 
-//----------------------
-
-message FileDeleteRequest {
-    string name = 1;
-    string path = 2;
-    string extension = 3;
-}
-
-message FileDeleteResponse {
-    bool ok = 1;
-    string msg = 2;
-}
-
 service FileUploadService {
     rpc UploadFile(stream FileUploadRequest) returns (FileUploadResponse) {};
-    rpc DeleteFile(FileDeleteRequest) returns (FileDeleteResponse) {};
 }

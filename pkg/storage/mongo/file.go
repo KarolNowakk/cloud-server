@@ -10,11 +10,10 @@ import (
 type fileModel struct {
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 
-	Name      string             `bson:"name"`
-	Extension string             `bson:"extension"`
-	FullPath  string             `bson:"fullPath"`
-	Owner     primitive.ObjectID `bson:"owner"`
-	Size      int64              `bson:"size"`
+	Name       string             `bson:"name"`
+	Path       string             `bson:"path"`
+	Owner      primitive.ObjectID `bson:"owner"`
+	SearchTags string             `bson:"searchTags"`
 
 	//auditCreateUpdateInterface
 	CreatedAt time.Time          `bson:"createdAt"`
@@ -23,26 +22,22 @@ type fileModel struct {
 	UpdatedBy primitive.ObjectID `bson:"updatedBy"`
 }
 
-func (m *fileModel) GetID() primitive.ObjectID {
+func (m fileModel) GetID() primitive.ObjectID {
 	return m.ID
 }
 
-func (m *fileModel) Creating(userID primitive.ObjectID) {
+func (m fileModel) Creating(userID primitive.ObjectID) {
 	m.CreatedAt = time.Now()
 	m.CreatedBy = userID
 	m.UpdatedAt = time.Now()
 	m.UpdatedBy = userID
 }
 
-func (m *fileModel) Updating(userID primitive.ObjectID) {
+func (m fileModel) Updating(userID primitive.ObjectID) {
 	m.UpdatedAt = time.Now()
 	m.UpdatedBy = userID
 }
 
-func (m *fileModel) GetUpdatingModelID() primitive.ObjectID {
+func (m fileModel) GetUpdatingModelID() primitive.ObjectID {
 	return m.GetID()
 }
-
-// func (m *fileModel) GetDownloadedModelID() primitive.ObjectID {
-// 	return m.GetID()
-// }
