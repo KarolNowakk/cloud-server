@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package upload;
+
+option go_package = "./uploadpb";
+
+message FileUploadInfo {
+    string name = 1;
+    string searchTags = 3;
+}
+
+message FileUploadBody {
+    bytes bytes = 4;
+}
+
+message FileUploadRequest {
+    oneof data {
+        FileUploadInfo info = 1;
+        FileUploadBody body = 2;
+    }
+}
+
+message FileUploadResponse {
+    bool ok = 1;
+    string msg = 2;
+}
+
+service FileUploadService {
+    rpc UploadFile(stream FileUploadRequest) returns (FileUploadResponse) {};
+}

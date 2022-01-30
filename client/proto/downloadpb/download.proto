@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package download;
+
+option go_package = "/downloadpb";
+
+message FileDownloadInfo {
+    string name = 1;
+}
+
+message FileDownloadBody {
+    bytes bytes = 4;
+}
+
+message FileDownloadResponse {
+    oneof data {
+        FileDownloadInfo info = 1;
+        FileDownloadBody body = 2;
+    }
+}
+
+message FileDownloadRequest {
+    string id = 1;
+}
+
+// ----------------------------------------------------------------
+
+message FileDeleteRequest {
+    string id = 1;
+}
+
+message FileDeleteResponse {
+    bool ok = 1;
+    string msg = 2;
+}
+
+service FileDownloadService {
+    rpc DownloadFile(FileDownloadRequest) returns (stream FileDownloadResponse) {};
+    rpc DeleteFile(FileDeleteRequest) returns (FileDeleteResponse) {};
+}

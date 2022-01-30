@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package search;
+
+option go_package = "/searchpb";
+
+message SearchFileInfo {
+    string id = 1;
+	string name = 2;
+	string searchTags = 3;
+}
+
+message SearchRequest {
+    string searchPhrase = 1;
+}
+
+message SearchResponse {
+    repeated SearchFileInfo files = 1;
+}
+
+service FileSearchService {
+    rpc SearchFiles(SearchRequest) returns (SearchResponse) {};
+}
